@@ -32,7 +32,7 @@
                                         <h4 class="text-lg font-medium text-gray-900">{{ $course->title }}</h4>
                                         <p class="mt-1 text-sm text-gray-500">{{ Str::limit($course->description, 100) }}</p>
                                         <div class="mt-4">
-                                            <a href="{{ route('courses.show', $course->slug) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                                            <a href="{{ !empty($course->slug) ? route('courses.show', $course->slug) : route('courses.index') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
                                                 เข้าเรียน
                                             </a>
                                         </div>

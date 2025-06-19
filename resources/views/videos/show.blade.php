@@ -136,7 +136,7 @@
                         </div>
                         <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                             <dt class="text-sm font-medium text-gray-500">คอร์ส</dt>
-                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $video->course->title }}</dd>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $video->course->title ?? 'ไม่ระบุ' }}</dd>
                         </div>
                         <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                             <dt class="text-sm font-medium text-gray-500">คำอธิบาย</dt>
@@ -147,7 +147,7 @@
             </div>
             
             <div class="flex justify-between">
-                <a href="{{ route('courses.show', $video->course->slug) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                <a href="{{ isset($video->course) && !empty($video->course->slug) ? route('courses.show', $video->course->slug) : route('courses.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                     กลับไปหน้าคอร์ส
                 </a>
                 

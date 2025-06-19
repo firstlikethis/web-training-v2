@@ -38,5 +38,5 @@ Route::middleware('auth')->group(function () {
     Route::get('/results/{video_id}', [ResultController::class, 'show'])->name('results.show');
 
 });
-
+ 
 require __DIR__.'/admin.php';

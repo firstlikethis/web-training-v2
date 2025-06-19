@@ -9,13 +9,21 @@ use Illuminate\Support\Facades\Log;
 
 class CourseController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $categories = Category::with(['courses' => function($query) {
-            $query->where('is_active', true);
-        }])->get();
+        $selectedCategory = $request->query('category');
         
-        return view('courses.index', compact('categories'));
+        $categories = Category::all();
+        
+        $coursesQuery = Course::where('is_active', true)->with('category')->with('videos');
+        
+        if ($selectedCategory) {
+            $coursesQuery->where('category_id', $selectedCategory);
+        }
+        
+        $courses = $coursesQuery->get();
+        
+        return view('courses.index', compact('categories', 'courses', 'selectedCategory'));
     }
     
     public function show($slug)
@@ -42,9 +50,21 @@ class CourseController extends Controller
             
             return view('courses.show', compact('course', 'userProgress'));
         } catch (\Exception $e) {
-            // ถ้ามีข้อผิดพลาดให้บันทึก log และ redirect กลับไปยังหน้า index
             Log::error('Error in CourseController@show: ' . $e->getMessage());
             return redirect()->route('courses.index')->with('error', 'ไม่พบคอร์สที่คุณต้องการ');
         }
+    }
+    
+    public function featured()
+    {
+        $featuredCourses = Course::where('is_active', true)
+            ->with('category')
+            ->latest()
+            ->take(6)
+            ->get();
+            
+        $categories = Category::all();
+        
+        return view('welcome', compact('featuredCourses', 'categories'));
     }
 }

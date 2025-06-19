@@ -9,11 +9,8 @@ use App\Http\Controllers\ResultController;
 use App\Http\Controllers\QuestionController;
 
 // Public routes
-Route::get('/', function () {
-    return view('welcome'); // แสดงหน้า welcome โดยตรง ไม่ redirect
-})->name('home');
+Route::get('/', [CourseController::class, 'featured'])->name('home');
 
-// Guest middleware สำหรับหน้า login (ใช้เฉพาะผู้ใช้ที่ยังไม่ได้ login)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
@@ -36,7 +33,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/questions/{id}/check', [QuestionController::class, 'checkAnswer'])->name('questions.check');
     
     Route::get('/results/{video_id}', [ResultController::class, 'show'])->name('results.show');
-
 });
  
 require __DIR__.'/admin.php';

@@ -74,14 +74,6 @@
                             </div>
 
                             <div class="col-span-6 sm:col-span-2">
-                                <label for="duration_seconds" class="block text-sm font-medium text-gray-700">ความยาว (วินาที)</label>
-                                <input type="number" name="duration_seconds" id="duration_seconds" value="{{ old('duration_seconds', $video->duration_seconds) }}" min="1" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                @error('duration_seconds')
-                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div class="col-span-6 sm:col-span-2">
                                 <label for="order" class="block text-sm font-medium text-gray-700">ลำดับ</label>
                                 <input type="number" name="order" id="order" value="{{ old('order', $video->order) }}" min="0" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                 @error('order')

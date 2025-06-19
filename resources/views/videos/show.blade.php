@@ -12,6 +12,8 @@
             userAnswers: {{ json_encode($userAnswers) }},
             activeQuestion: null,
             videoEnded: false,
+            progressUpdatePending: false,
+            lastProgressUpdate: 0,
             
             init() {
                 this.videoPlayer = document.getElementById('video-player');
@@ -23,10 +25,27 @@
                     this.updateProgress();
                 });
                 
+                this.videoPlayer.addEventListener('pause', () => {
+                    // บันทึกทันทีเมื่อมีการหยุดวิดีโอ
+                    this.saveProgress(false);
+                });
+                
                 this.videoPlayer.addEventListener('ended', () => {
                     this.videoEnded = true;
                     this.completeVideo();
                 });
+                
+                // เพิ่ม event listener เมื่อออกจากหน้า
+                window.addEventListener('beforeunload', () => {
+                    this.saveProgress(false);
+                });
+                
+                // ตั้งเวลาบันทึกความคืบหน้าทุก 30 วินาที แม้ไม่มีการ interact
+                setInterval(() => {
+                    if (!this.videoPlayer.paused) {
+                        this.saveProgress(false);
+                    }
+                }, 30000);
             },
             
             checkForQuestions() {
@@ -37,21 +56,45 @@
                     if (this.currentTime >= question.time_to_show && !this.userAnswers.includes(question.id)) {
                         this.activeQuestion = question;
                         this.videoPlayer.pause();
+                        // บันทึกความคืบหน้าเมื่อพบคำถาม
+                        this.saveProgress(false);
                         break;
                     }
                 }
             },
             
             updateProgress() {
-                if (this.currentTime % 10 === 0) {
-                    axios.post('{{ route('progress.update') }}', {
-                        video_id: {{ $video->id }},
-                        progress_seconds: this.currentTime,
-                        last_position: this.videoPlayer.currentTime
-                    }).catch(error => {
-                        console.error('Failed to update progress:', error);
-                    });
+                // บันทึกทุก 5 วินาที หรือเมื่อเวลาเปลี่ยนไปมากกว่า 5 วินาที
+                if (this.currentTime % 5 === 0 && this.lastProgressUpdate !== this.currentTime) {
+                    this.saveProgress(true);
+                    this.lastProgressUpdate = this.currentTime;
                 }
+            },
+            
+            saveProgress(throttled) {
+                // ป้องกันการส่งข้อมูลซ้ำๆ ในเวลาใกล้เคียงกัน
+                if (this.progressUpdatePending) return;
+                
+                this.progressUpdatePending = true;
+                
+                axios.post('{{ route('progress.update') }}', {
+                    video_id: {{ $video->id }},
+                    progress_seconds: this.currentTime,
+                    last_position: this.videoPlayer.currentTime
+                }).then(response => {
+                    console.log('Progress updated successfully:', response.data);
+                    this.progressUpdatePending = false;
+                }).catch(error => {
+                    console.error('Failed to update progress:', error);
+                    this.progressUpdatePending = false;
+                    
+                    // กรณีเกิดข้อผิดพลาด ลองใหม่หลังจากผ่านไป 10 วินาที
+                    if (throttled) {
+                        setTimeout(() => {
+                            this.saveProgress(false);
+                        }, 10000);
+                    }
+                });
             },
             
             answerQuestion(questionId, optionId) {
@@ -62,6 +105,8 @@
                         this.userAnswers.push(questionId);
                         this.activeQuestion = null;
                         this.videoPlayer.play();
+                        // บันทึกความคืบหน้าหลังตอบคำถาม
+                        this.saveProgress(false);
                     }
                 }).catch(error => {
                     console.error('Failed to submit answer:', error);
@@ -69,16 +114,23 @@
             },
             
             completeVideo() {
+                this.saveProgress(false);
+                
                 axios.post('{{ route('progress.update') }}', {
                     video_id: {{ $video->id }},
                     progress_seconds: this.videoPlayer.duration,
                     last_position: this.videoPlayer.duration
                 }).then(response => {
+                    console.log('Video completed:', response.data);
                     if (response.data.completed) {
                         window.location.href = '{{ route('results.show', $video->id) }}';
                     }
                 }).catch(error => {
                     console.error('Failed to complete video:', error);
+                    // กรณีเกิดข้อผิดพลาด ลองใหม่หลังจากผ่านไป 3 วินาที
+                    setTimeout(() => {
+                        this.completeVideo();
+                    }, 3000);
                 });
             }
         }" class="space-y-8">

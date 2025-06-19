@@ -29,7 +29,6 @@ class CategoryController extends Controller
         
         $category = Category::create([
             'name' => $validated['name'],
-            'slug' => Str::slug($validated['name']),
             'description' => $validated['description'],
         ]);
         
@@ -53,7 +52,6 @@ class CategoryController extends Controller
         ]);
         
         $category->name = $validated['name'];
-        $category->slug = Str::slug($validated['name']);
         $category->description = $validated['description'];
         $category->save();
         

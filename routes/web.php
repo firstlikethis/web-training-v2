@@ -36,4 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/questions/{id}/check', [QuestionController::class, 'checkAnswer'])->name('questions.check');
     
     Route::get('/results/{video_id}', [ResultController::class, 'show'])->name('results.show');
+
 });
+
+require __DIR__.'/admin.php';

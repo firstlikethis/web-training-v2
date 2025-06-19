@@ -23,7 +23,7 @@ class RedirectIfAuthenticated
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
-                return redirect()->route('courses.index'); // แก้ไขเส้นทาง redirect เมื่อ login แล้ว
+                return redirect()->route('courses.index');
             }
         }
 

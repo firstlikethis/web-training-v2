@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Cocur\Slugify\Slugify;
 use Illuminate\Support\Str;
 
 class Category extends Model
@@ -20,20 +19,16 @@ class Category extends Model
 
         // สร้าง slug อัตโนมัติก่อนบันทึก
         static::saving(function ($category) {
-            if (empty($category->slug) && !empty($category->name)) {
-                $slugify = new Slugify();
+            if (empty($category->slug)) {
+                $randomNumber = mt_rand(100000, 999999);
+                $category->slug = 'category' . $randomNumber;
                 
-                // พยายามสร้าง slug ตามปกติก่อน
-                $slug = $slugify->slugify($category->name);
-                
-                // ถ้า slug ว่างเปล่าหรือไม่มีการเปลี่ยนแปลง (ภาษาไทย)
-                if (empty($slug) || $slug === $category->name) {
-                    // ใช้ ID + timestamp แทน สำหรับภาษาไทย
-                    $id = $category->id ?? date('YmdHis');
-                    $slug = 'category-' . $id;
+                $existingCategory = self::where('slug', $category->slug)->first();
+                while ($existingCategory) {
+                    $randomNumber = mt_rand(100000, 999999);
+                    $category->slug = 'category' . $randomNumber;
+                    $existingCategory = self::where('slug', $category->slug)->first();
                 }
-                
-                $category->slug = $slug;
             }
         });
     }

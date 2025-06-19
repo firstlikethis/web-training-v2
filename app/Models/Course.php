@@ -20,10 +20,17 @@ class Course extends Model
     {
         parent::boot();
 
-        // ตรวจสอบว่า slug ไม่เป็นค่าว่างก่อนบันทึกข้อมูล
         static::saving(function ($course) {
-            if (empty($course->slug) && !empty($course->title)) {
-                $course->slug = Str::slug($course->title);
+            if (empty($course->slug)) {
+                $randomNumber = mt_rand(100000, 999999);
+                $course->slug = 'course' . $randomNumber;
+                
+                $existingCourse = self::where('slug', $course->slug)->first();
+                while ($existingCourse) {
+                    $randomNumber = mt_rand(100000, 999999);
+                    $course->slug = 'course' . $randomNumber;
+                    $existingCourse = self::where('slug', $course->slug)->first();
+                }
             }
         });
     }

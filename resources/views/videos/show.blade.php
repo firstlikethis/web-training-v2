@@ -48,6 +48,8 @@
                         video_id: {{ $video->id }},
                         progress_seconds: this.currentTime,
                         last_position: this.videoPlayer.currentTime
+                    }).catch(error => {
+                        console.error('Failed to update progress:', error);
                     });
                 }
             },
@@ -61,6 +63,8 @@
                         this.activeQuestion = null;
                         this.videoPlayer.play();
                     }
+                }).catch(error => {
+                    console.error('Failed to submit answer:', error);
                 });
             },
             
@@ -73,6 +77,8 @@
                     if (response.data.completed) {
                         window.location.href = '{{ route('results.show', $video->id) }}';
                     }
+                }).catch(error => {
+                    console.error('Failed to complete video:', error);
                 });
             }
         }" class="space-y-8">

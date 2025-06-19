@@ -9,15 +9,15 @@ use App\Http\Controllers\Admin\VideoController;
 use App\Http\Controllers\Admin\QuestionController;
 
 // Admin routes
-Route::prefix('dashboard-z2X9a')->group(function () {
+Route::prefix('dashboard-z2X9a')->name('admin.')->group(function () {
     // Authentication
-    Route::get('/login', [AuthController::class, 'showLogin'])->name('admin.login');
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
     
     // Protected admin routes
     Route::middleware('admin.auth')->group(function () {
-        Route::get('/', [AuthController::class, 'dashboard'])->name('admin.dashboard');
-        Route::post('/logout', [AuthController::class, 'logout'])->name('admin.logout');
+        Route::get('/', [AuthController::class, 'dashboard'])->name('dashboard');
+        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
         
         // Users management
         Route::resource('users', UserController::class);
@@ -32,11 +32,11 @@ Route::prefix('dashboard-z2X9a')->group(function () {
         Route::resource('videos', VideoController::class);
         
         // Questions management
-        Route::get('/videos/{video_id}/questions', [QuestionController::class, 'index'])->name('admin.questions.index');
-        Route::get('/videos/{video_id}/questions/create', [QuestionController::class, 'create'])->name('admin.questions.create');
-        Route::post('/videos/{video_id}/questions', [QuestionController::class, 'store'])->name('admin.questions.store');
-        Route::get('/questions/{id}/edit', [QuestionController::class, 'edit'])->name('admin.questions.edit');
-        Route::put('/questions/{id}', [QuestionController::class, 'update'])->name('admin.questions.update');
-        Route::delete('/questions/{id}', [QuestionController::class, 'destroy'])->name('admin.questions.destroy');
+        Route::get('/videos/{video_id}/questions', [QuestionController::class, 'index'])->name('questions.index');
+        Route::get('/videos/{video_id}/questions/create', [QuestionController::class, 'create'])->name('questions.create');
+        Route::post('/videos/{video_id}/questions', [QuestionController::class, 'store'])->name('questions.store');
+        Route::get('/questions/{id}/edit', [QuestionController::class, 'edit'])->name('questions.edit');
+        Route::put('/questions/{id}', [QuestionController::class, 'update'])->name('questions.update');
+        Route::delete('/questions/{id}', [QuestionController::class, 'destroy'])->name('questions.destroy');
     });
 });

@@ -49,7 +49,7 @@
                         
                         if (savedPosition < this.videoPlayer.duration) {
                             this.videoPlayer.currentTime = savedPosition;
-                            console.log("Resumed video at position: " + savedPosition);
+                            console.log('Resumed video at position: ' + savedPosition);
                         }
                     }
                 });

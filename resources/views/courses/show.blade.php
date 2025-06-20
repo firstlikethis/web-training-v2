@@ -63,67 +63,147 @@
                     
                     <ul class="divide-y divide-gray-200">
                         @foreach($course->videos as $index => $video)
+                            @php
+                                $progress = auth()->user()->progress()->where('video_id', $video->id)->first();
+                                $isLocked = false;
+                                $previousCompleted = true;
+                                
+                                // ตรวจสอบว่าบทเรียนก่อนหน้าเรียนจบหรือยัง
+                                if ($video->order > 1) {
+                                    $previousVideos = $video->course->videos()
+                                        ->where('order', '<', $video->order)
+                                        ->orderBy('order', 'asc')
+                                        ->get();
+                                        
+                                    foreach ($previousVideos as $prevVideo) {
+                                        $prevProgress = auth()->user()->progress()
+                                            ->where('video_id', $prevVideo->id)
+                                            ->where('completed', true)
+                                            ->first();
+                                            
+                                        if (!$prevProgress) {
+                                            $previousCompleted = false;
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                $isLocked = !$previousCompleted;
+                            @endphp
+                            
                             <li class="group hover:bg-indigo-50 transition-colors duration-150">
-                                <a href="{{ route('videos.show', $video->id) }}" class="block">
-                                    <div class="px-6 py-4 sm:px-6">
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center space-x-3">
-                                                <div class="flex items-center justify-center h-10 w-10 rounded-full bg-indigo-100 text-indigo-600 flex-shrink-0">
-                                                    <span class="text-sm font-medium">{{ $index + 1 }}</span>
+                                @if($isLocked)
+                                    <div class="block">
+                                        <div class="px-6 py-4 sm:px-6">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center space-x-3">
+                                                    <div class="flex items-center justify-center h-10 w-10 rounded-full bg-gray-100 text-gray-400 flex-shrink-0">
+                                                        <span class="text-sm font-medium">{{ $index + 1 }}</span>
+                                                    </div>
+                                                    <div>
+                                                        <p class="text-sm font-medium text-gray-400">
+                                                            {{ $video->title }}
+                                                        </p>
+                                                        <p class="text-xs text-gray-400 mt-1 line-clamp-1">
+                                                            {{ Str::limit($video->description, 80) }}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p class="text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition-colors duration-150">
-                                                        {{ $video->title }}
-                                                    </p>
-                                                    <p class="text-xs text-gray-500 mt-1 line-clamp-1">
-                                                        {{ Str::limit($video->description, 80) }}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div class="ml-2 flex-shrink-0 flex items-center space-x-4">
-                                                <div class="flex items-center text-sm text-gray-500">
-                                                    <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-                                                    </svg>
-                                                    {{ gmdate('H:i:s', $video->duration_seconds) }}
-                                                </div>
-                                                <div class="flex-shrink-0">
-                                                    @if(isset($userProgress[$video->id]) && $userProgress[$video->id])
-                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                            <svg class="-ml-0.5 mr-1.5 h-3 w-3 text-green-500" fill="currentColor" viewBox="0 0 8 8">
-                                                                <circle cx="4" cy="4" r="3" />
-                                                            </svg>
-                                                            เรียนจบแล้ว
-                                                        </span>
-                                                    @else
+                                                <div class="ml-2 flex-shrink-0 flex items-center space-x-4">
+                                                    <div class="flex items-center text-sm text-gray-400">
+                                                        <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        {{ gmdate('H:i:s', $video->duration_seconds) }}
+                                                    </div>
+                                                    <div class="flex-shrink-0">
                                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                            <svg class="-ml-0.5 mr-1.5 h-3 w-3 text-gray-400" fill="currentColor" viewBox="0 0 8 8">
-                                                                <circle cx="4" cy="4" r="3" />
+                                                            <svg class="-ml-0.5 mr-1.5 h-3.5 w-3.5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
                                                             </svg>
-                                                            ยังไม่ได้เรียน
+                                                            ล็อค
                                                         </span>
-                                                    @endif
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div class="mt-2 sm:flex sm:justify-between">
-                                            <div class="sm:flex">
-                                                <p class="flex items-center text-sm text-gray-500">
-                                                    <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-indigo-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-                                                    </svg>
-                                                    {{ $video->questions->count() }} คำถาม
-                                                </p>
-                                            </div>
-                                            <div class="mt-2 flex items-center text-sm text-indigo-600 sm:mt-0 sm:ml-4">
-                                                <span class="font-medium">เข้าเรียน</span>
-                                                <svg class="ml-1 h-5 w-5 text-indigo-500 group-hover:translate-x-1 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                                                </svg>
+                                            <div class="mt-2 sm:flex sm:justify-between">
+                                                <div class="sm:flex">
+                                                    <p class="flex items-center text-sm text-gray-400">
+                                                        <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        {{ $video->questions->count() }} คำถาม
+                                                    </p>
+                                                </div>
+                                                <div class="mt-2 flex items-center text-sm text-gray-400 sm:mt-0 sm:ml-4">
+                                                    <span class="font-medium">ต้องเรียนบทก่อนหน้าให้จบก่อน</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </a>
+                                @else
+                                    <a href="{{ route('videos.show', $video->id) }}" 
+                                    class="block">
+                                        <div class="px-6 py-4 sm:px-6">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center space-x-3">
+                                                    <div class="flex items-center justify-center h-10 w-10 rounded-full bg-indigo-100 text-indigo-600 flex-shrink-0">
+                                                        <span class="text-sm font-medium">{{ $index + 1 }}</span>
+                                                    </div>
+                                                    <div>
+                                                        <p class="text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition-colors duration-150">
+                                                            {{ $video->title }}
+                                                        </p>
+                                                        <p class="text-xs text-gray-500 mt-1 line-clamp-1">
+                                                            {{ Str::limit($video->description, 80) }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div class="ml-2 flex-shrink-0 flex items-center space-x-4">
+                                                    <div class="flex items-center text-sm text-gray-500">
+                                                        <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        {{ gmdate('H:i:s', $video->duration_seconds) }}
+                                                    </div>
+                                                    <div class="flex-shrink-0">
+                                                        @if(isset($userProgress[$video->id]) && $userProgress[$video->id])
+                                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                <svg class="-ml-0.5 mr-1.5 h-3 w-3 text-green-500" fill="currentColor" viewBox="0 0 8 8">
+                                                                    <circle cx="4" cy="4" r="3" />
+                                                                </svg>
+                                                                เรียนจบแล้ว
+                                                            </span>
+                                                        @else
+                                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                                <svg class="-ml-0.5 mr-1.5 h-3 w-3 text-gray-400" fill="currentColor" viewBox="0 0 8 8">
+                                                                    <circle cx="4" cy="4" r="3" />
+                                                                </svg>
+                                                                ยังไม่ได้เรียน
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2 sm:flex sm:justify-between">
+                                                <div class="sm:flex">
+                                                    <p class="flex items-center text-sm text-gray-500">
+                                                        <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-indigo-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        {{ $video->questions->count() }} คำถาม
+                                                    </p>
+                                                </div>
+                                                <div class="mt-2 flex items-center text-sm text-indigo-600 sm:mt-0 sm:ml-4">
+                                                    <span class="font-medium">เข้าเรียน</span>
+                                                    <svg class="ml-1 h-5 w-5 text-indigo-500 group-hover:translate-x-1 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </a>
+                                @endif
                             </li>
                         @endforeach
                     </ul>

@@ -93,11 +93,29 @@
                                 @php
                                     $completedVideos = 0;
                                     $totalVideos = $course->videos->count();
+                                    $lockedVideos = 0;
                                     
-                                    foreach ($course->videos as $video) {
-                                        $progress = auth()->user()->progress()->where('video_id', $video->id)->first();
-                                        if ($progress && $progress->completed) {
-                                            $completedVideos++;
+                                    if ($totalVideos > 0) {
+                                        foreach ($course->videos as $video) {
+                                            $progress = auth()->user()->progress()->where('video_id', $video->id)->first();
+                                            
+                                            if ($progress && $progress->completed) {
+                                                $completedVideos++;
+                                            }
+                                            
+                                            if ($video->order > 1) {
+                                                $previousVideo = $course->videos->where('order', $video->order - 1)->first();
+                                                if ($previousVideo) {
+                                                    $prevProgress = auth()->user()->progress()
+                                                        ->where('video_id', $previousVideo->id)
+                                                        ->where('completed', true)
+                                                        ->first();
+                                                        
+                                                    if (!$prevProgress) {
+                                                        $lockedVideos++;
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                     
@@ -113,6 +131,15 @@
                                         <div class="mt-2 w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                                             <div class="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full transition-all duration-500 ease-out" style="width: {{ $progressPercentage }}%"></div>
                                         </div>
+                                        
+                                        @if($lockedVideos > 0)
+                                            <div class="flex items-center mt-2 text-xs text-gray-500">
+                                                <svg class="h-3.5 w-3.5 mr-1 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                </svg>
+                                                <span>{{ $lockedVideos }} บทเรียนถูกล็อค</span>
+                                            </div>
+                                        @endif
                                     </div>
                                 @endif
                             @endauth

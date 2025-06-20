@@ -42,7 +42,17 @@
             
             init() {
                 this.videoPlayer = document.getElementById('video-player');
-                this.videoPlayer.currentTime = {{ $userProgress ? $userProgress->last_position : 0 }};
+
+                this.videoPlayer.addEventListener('loadedmetadata', () => {
+                    if ({{ $userProgress && $userProgress->last_position > 0 ? 'true' : 'false' }}) {
+                        let savedPosition = {{ $userProgress ? $userProgress->last_position : 0 }};
+                        
+                        if (savedPosition < this.videoPlayer.duration) {
+                            this.videoPlayer.currentTime = savedPosition;
+                            console.log("Resumed video at position: " + savedPosition);
+                        }
+                    }
+                });
                 
                 this.videoPlayer.addEventListener('timeupdate', () => {
                     this.currentTime = Math.floor(this.videoPlayer.currentTime);
@@ -364,24 +374,66 @@
                         <div class="text-sm text-gray-500 mb-3">บทเรียนในคอร์สนี้:</div>
                         <ul class="space-y-2">
                             @foreach($video->course->videos()->orderBy('order')->get() as $courseVideo)
+                                @php
+                                    $progress = auth()->user()->progress()->where('video_id', $courseVideo->id)->first();
+                                    $isLocked = false;
+                                    $previousCompleted = true;
+                                    
+                                    // ตรวจสอบว่าบทเรียนก่อนหน้าเรียนจบหรือยัง
+                                    if ($courseVideo->order > 1) {
+                                        $previousVideos = $video->course->videos()
+                                            ->where('order', '<', $courseVideo->order)
+                                            ->orderBy('order', 'asc')
+                                            ->get();
+                                            
+                                        foreach ($previousVideos as $prevVideo) {
+                                            $prevProgress = auth()->user()->progress()
+                                                ->where('video_id', $prevVideo->id)
+                                                ->where('completed', true)
+                                                ->first();
+                                                
+                                            if (!$prevProgress) {
+                                                $previousCompleted = false;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    
+                                    $isLocked = !$previousCompleted;
+                                @endphp
+                                
                                 <li>
-                                    <a href="{{ route('videos.show', $courseVideo->id) }}" 
-                                       class="flex items-center p-2 rounded-lg {{ $video->id == $courseVideo->id ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50' }} transition-colors duration-150">
-                                        <div class="w-8 h-8 rounded-full flex items-center justify-center {{ $video->id == $courseVideo->id ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600' }} mr-3">
-                                            {{ $loop->iteration }}
-                                        </div>
-                                        <div class="flex-1 truncate">{{ $courseVideo->title }}</div>
-                                        @php
-                                            $progress = auth()->user()->progress()->where('video_id', $courseVideo->id)->first();
-                                        @endphp
-                                        @if($progress && $progress->completed)
-                                            <div class="ml-2 text-green-500" title="เรียนจบแล้ว">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                                </svg>
+                                    @if($isLocked)
+                                        <div class="flex items-center p-2 rounded-lg text-gray-400 bg-gray-50 cursor-not-allowed">
+                                            <div class="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 text-gray-400 mr-3">
+                                                {{ $loop->iteration }}
                                             </div>
-                                        @endif
-                                    </a>
+                                            <div class="flex-1 truncate">{{ $courseVideo->title }}</div>
+                                            <div class="ml-2">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                                                    <svg class="h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                    </svg>
+                                                    ล็อค
+                                                </span>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <a href="{{ route('videos.show', $courseVideo->id) }}" 
+                                        class="flex items-center p-2 rounded-lg {{ $video->id == $courseVideo->id ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50' }} transition-colors duration-150">
+                                            <div class="w-8 h-8 rounded-full flex items-center justify-center {{ $video->id == $courseVideo->id ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600' }} mr-3">
+                                                {{ $loop->iteration }}
+                                            </div>
+                                            <div class="flex-1 truncate">{{ $courseVideo->title }}</div>
+                                            @if($progress && $progress->completed)
+                                                <div class="ml-2 text-green-500" title="เรียนจบแล้ว">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                                    </svg>
+                                                </div>
+                                            @endif
+                                        </a>
+                                    @endif
                                 </li>
                             @endforeach
                         </ul>

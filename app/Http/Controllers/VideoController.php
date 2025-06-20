@@ -16,6 +16,23 @@ class VideoController extends Controller
             $query->orderBy('time_to_show');
         }, 'questions.options'])->findOrFail($id);
         
+        $previousVideos = Video::where('course_id', $video->course_id)
+            ->where('order', '<', $video->order)
+            ->orderBy('order', 'asc')
+            ->get();
+        
+        foreach ($previousVideos as $previousVideo) {
+            $progress = auth()->user()->progress()
+                ->where('video_id', $previousVideo->id)
+                ->where('completed', true)
+                ->first();
+            
+            if (!$progress) {
+                return redirect()->route('videos.show', $previousVideo->id)
+                    ->with('error', 'คุณต้องดูบทเรียนก่อนหน้านี้ให้จบก่อน');
+            }
+        }
+        
         $userProgress = auth()->user()->progress()
             ->where('video_id', $id)
             ->first();
